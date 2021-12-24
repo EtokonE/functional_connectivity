@@ -16,3 +16,6 @@ $ docker run -it --rm -p 8888:8888 \
 -v /path/to/functional_connectivity/:/home/neuro/functional_connectivity/ \
 etokone/functional_connectivity jupyter notebook
 ```
+
+## CometML
+[Here](https://www.comet.ml/etokone/fmri-la5c-study/view/new/panels) you can find more information about experiments
