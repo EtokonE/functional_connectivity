@@ -30,9 +30,9 @@ def extract_confounds(confound_tsv, confounds, dt=True):
     Extract confound matrix from tsv file
  
     Arguments:
-        confound_tsv                    Full path to confounds.tsv
-        confounds                       A list of confounder variables to extract
-        dt                              Compute temporal derivatives [default = True]
+        confound_tsv                   Full path to confounds.tsv
+        confounds                      A list of confounder variables to extract
+        dt                             Compute temporal derivatives [default = True]
         
     Outputs:
         confound_matrix                 
