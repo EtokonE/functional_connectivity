@@ -10,7 +10,7 @@ cd functional_connectivity
 
 ## Docker
 ```bash
-$ docker push etokone/functional_connectivity:latest
+$ docker pull etokone/functional_connectivity:latest
 
 $ docker run -it --rm -p 8888:8888 \
 -v /path/to/functional_connectivity/:/home/neuro/functional_connectivity/ \
