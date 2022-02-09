@@ -2,7 +2,8 @@
 __pycache__/
 *.py[cod]
 *$py.class
-
+*.pklz
+*.m
 
 # Jupyter Notebook
 .ipynb_checkpoints
