@@ -20,3 +20,4 @@ venv.bak/
 notebooks/nilearn_cache
 docker_build.txt
 data/ds000030
+.idea/
