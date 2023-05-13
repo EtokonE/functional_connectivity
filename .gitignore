@@ -4,6 +4,7 @@ __pycache__/
 *$py.class
 *.pklz
 *.m
+.DS_Store
 
 # Jupyter Notebook
 .ipynb_checkpoints
