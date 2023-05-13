@@ -58,7 +58,7 @@ def extract_confounds(confound_tsv, confounds, dt=True):
         confounds = confounds + dt_names
     
     # Extract relevant columns
-    confound_df = pd.read_csv(confound_tsv,delimiter='\t') 
+    confound_df = pd.read_csv(confound_tsv, delimiter='\t')
     confound_df = confound_df[confounds]
     
  
