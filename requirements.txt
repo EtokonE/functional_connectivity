@@ -15,3 +15,4 @@ networkx==3.1
 tqdm==4.65.0
 h5py==3.8.0
 pybids==0.16.1
+ipykernel==6.23.0

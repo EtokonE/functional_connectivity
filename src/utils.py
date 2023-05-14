@@ -2,7 +2,9 @@ from comet_ml import Experiment
 from nilearn import image as nimg
 
 from tqdm import tqdm
+from typing import Tuple
 
+import h5py
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -135,7 +137,6 @@ def extract_confound_vars(confound_file, confounds, drop_tr_count=None):
     return confounds
 
 
-
 def get_time_series(masker, confounds, func_img):
     """
     Apply the parcellation + cleaning and fill in time series using masker
@@ -214,3 +215,21 @@ def calc_all_sub_ts(layout, params, masker):
         labels_list.append(masker.labels_)
         
     return ctrl_subjects_raw, schz_subjects_raw, labels_list
+
+
+def read_h5_parcellation(parcel_file: str) -> Tuple[np.ndarray, np.ndarray]:
+    """
+    Load parcellations from .h5 file
+
+    Args:
+        parcel_file: path to .h5 file with parcellations
+
+    Returns:
+        loaded_time_series: time series for all subjects
+        loaded_labels_list: labels for all regions
+    """
+    with h5py.File(parcel_file, 'r') as f:
+        loaded_time_series = f['time_series'][:]
+        loaded_labels_list = f['labels_list'][:]
+
+    return loaded_time_series, loaded_labels_list
