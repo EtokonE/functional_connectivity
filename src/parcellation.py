@@ -3,20 +3,25 @@ This script is used to extract the time series from the preprocessed functional 
 using the parcellation atlas. The atlas was chosen from:
 - https://github.com/nilearn/nilearn/blob/main/nilearn/datasets/atlas.py
 """
+import os
 import bids
+import h5py
+import numpy as np
+import pandas as pd
+from tqdm import tqdm
+from yacs.config import CfgNode
 from nilearn import maskers
 from nilearn import image as nimg
+from typing import List, Tuple
 from src.logger import get_logger
-from yacs.config import CfgNode
-from src.utils import extract_extension_files, extract_confounds
+from src.utils import extract_extension_files, load_fimg, extract_confound_vars, get_time_series
 from src.config.base_config import combine_config
 
 
-cfg = combine_config()
-logger = get_logger(__name__)
+logger = get_logger('parcellation')
 
 
-def load_atlas(parcel_file: str) -> nimg.Nifti1Image:
+def load_atlas(parcel_file: str):
     """Load the parcellation atlas"""
     parcel_atlas = nimg.load_img(parcel_file)
     return parcel_atlas
@@ -41,6 +46,9 @@ def define_masker(labels_img: str,
         high_pass (float): high pass filter
         low_pass (float): low pass filter
         t_r (int): repetition time
+
+    Returns:
+        masker (NiftiLabelsMasker): masker object
     """
     masker = maskers.NiftiLabelsMasker(labels_img=labels_img,
                                        standardize=standardize,
@@ -60,6 +68,9 @@ def get_layout(bids_root: str, validate=False, **kwargs) -> bids.BIDSLayout:
     Args:
         bids_root (str): path to BIDS directory
         validate (bool): validate the BIDS dataset
+
+    Returns:
+        layout (BIDSLayout): BIDS layout object
     """
     layout = bids.BIDSLayout(bids_root, validate=validate, **kwargs)
     logger.info(
@@ -70,99 +81,192 @@ def get_layout(bids_root: str, validate=False, **kwargs) -> bids.BIDSLayout:
     return layout
 
 
+def get_files(layout: bids.BIDSLayout,
+              subject: str,
+              return_type: str,
+              task: str,
+              datatype: str,
+              suffix: str,
+              file_extension: str,
+              **kwargs) -> list:
+    """
+    Get the preprocessed files from layout
+
+    Args:
+         layout (BIDSLayout): BIDS layout object
+         subject (str): subject id
+         return_type (str): return type (object/file/id)
+         task (str): task (rest)
+         datatype (str): data type
+         suffix (str): suffix
+         file_extension (str): file extension
+
+    Returns:
+         files (list): list of files
+    """
+    files = layout.get(subject=subject,
+                       return_type=return_type,
+                       task=task,
+                       datatype=datatype,
+                       suffix=suffix,
+                       **kwargs)
+    file = extract_extension_files(files, file_extension)[0]
+    logger.info(f'Process {file} file')
+    return file
 
 
+def extract_confounds(confound_tsv: str, confounds: list, dt: bool = True) -> np.ndarray:
+    """
+    Extract confound matrix from tsv file
+
+    Arguments:
+        confound_tsv                   Full path to confounds.tsv
+        confounds                      A list of confounder variables to extract
+        dt                             Compute temporal derivatives [default = True]
+
+    returns:
+        confound_matrix                 
+    """
+
+    if dt:
+        dt_names = ['{}_derivative1'.format(c) for c in confounds]
+        confounds = confounds + dt_names
+
+    # Extract relevant columns
+    confound_df = pd.read_csv(confound_tsv, delimiter='\t')
+    confound_df = confound_df[confounds]
+
+    # Convert into a matrix of values (timepoints)x(variable)
+    confound_mat = confound_df.values
+
+    return confound_mat
 
 
+def save_parcellation_results(time_series: List[np.ndarray],
+                              labels_list: List[np.ndarray],
+                              out_folder: str = 'results',
+                              file_name: str = 'parcellation.h5',
+                              age_group: str = 'adults') -> None:
+    """
+    Save the parcellation results in h5 file
 
-layout = bids.BIDSLayout(cfg.BIDS.ADULTS_BIDS_ROOT, validate=False)
-print(f'List of subjects: {layout.get_subjects()} \n\nList of tasks: {layout.get_tasks()}')
-print(layout)
+    Args:
+        time_series (List[np.ndarray]): time series
+        labels_list (List[np.ndarray]): list of atlas ROIs
+        out_folder (str): output folder where to save the results file
+        file_name (str): name of the results file
+        age_group (str): age group (adults/children...) to add to the file name
+    """
+    full_path = os.path.join(out_folder, f'{age_group}_{file_name}')
+    os.makedirs(out_folder, exist_ok=True)
 
-# Get preprocessed functional files
-func_files = layout.get(return_type=cfg.BIDS.RETURN_TYPE,
-                        subject='001',
-                        datatype=cfg.BIDS.DATATYPE,
-                        suffix=cfg.BIDS.FUNC_SUFFIX,
-                        space=cfg.BIDS.SPACE)
+    with h5py.File(full_path, 'w') as f:
+        f.create_dataset('time_series', data=np.array(time_series))
+        f.create_dataset('labels_list', data=np.array(labels_list))
 
-func_files = extract_extension_files(func_files)
-
-print(func_files)
-
-
-# Get resting state data (preprocessed, mask, and confounds file)
-func_files = layout.get(return_type=cfg.BIDS.RETURN_TYPE,
-                        task=cfg.BIDS.TASK,
-                        datatype=cfg.BIDS.DATATYPE,
-                        suffix=cfg.BIDS.FUNC_SUFFIX,
-                        space=cfg.BIDS.SPACE)
-func_files = extract_extension_files(func_files)
-
-mask_files = layout.get(return_type=cfg.BIDS.RETURN_TYPE,
-                        datatype=cfg.BIDS.DATATYPE,
-                        task=cfg.BIDS.TASK,
-                        suffix=cfg.BIDS.MASK_SUFFIX,
-                        space=cfg.BIDS.SPACE)
-mask_files = extract_extension_files(mask_files)
-
-confound_files = layout.get(return_type=cfg.BIDS.RETURN_TYPE,
-                            datatype=cfg.BIDS.DATATYPE,
-                            task=cfg.BIDS.TASK,
-                            suffix=cfg.BIDS.CONFOUNDS_SUFFIX)
-confound_files = extract_extension_files(confound_files, extension='tsv')
-
-print(func_files, '\n', len(func_files))
-print(mask_files, '\n', len(mask_files))
-print(confound_files, '\n', len(confound_files))
-
-params = {
-    'parcel_file': '../resources/rois/yeo_2011/Yeo_JNeurophysiol11_MNI152/relabeled_yeo_atlas.nii.gz',
-    'confounds': ['trans_x', 'trans_y', 'trans_z',
-                  'rot_x', 'rot_y', 'rot_z',
-                  'white_matter', 'csf', 'global_signal'],
-    'high_pass': 0.009,
-    'low_pass': 0.08,
-    'detrend': True,
-    'standardize': True,
-    'tr_drop': 4
-
-}
-
-yeo_7 = nimg.load_img(params['parcel_file'])
-
-masker = maskers.NiftiLabelsMasker(labels_img=yeo_7,
-                                   standardize=params['standardize'],
-                                   memory='nilearn_cache',
-                                   detrend=params['detrend'],
-                                   low_pass=params['low_pass'],
-                                   high_pass=params['high_pass'],
-                                   t_r=2)
+    logger.info(f'Parcellation results for age group {age_group} saved in {full_path}')
 
 
-# Pull the first subject's data
-func_file = func_files[0]
-mask_file = mask_files[0]
-confound_file = confound_files[0]
+def extract_time_series(layout: bids.BIDSLayout,
+                        masker: maskers.NiftiLabelsMasker,
+                        config: CfgNode) -> Tuple[List[np.ndarray], List[np.ndarray]]:
+    """
+    Extract the time series from the preprocessed functional data, using the parcellation atlas
+
+    Args:
+        layout (BIDSLayout): BIDS layout object
+        masker (NiftiLabelsMasker): masker object
+        config (CfgNode): configuration file
+
+    Returns:
+        time_series (List[np.ndarray]): time series
+        labels_list (List[np.ndarray]): list of labels
+    """
+    subjects_list = layout.get_subjects()
+    logger.info(f'Found {len(subjects_list)} subjects\n {subjects_list}')
+
+    time_series = []
+    labels_list = []
+
+    for subject in tqdm(subjects_list):
+        logger.info(f'Extracting time series for subject: {subject}')
+        func_file = get_files(layout=layout,
+                              subject=subject,
+                              return_type=config.BIDS.RETURN_TYPE,
+                              task=config.BIDS.TASK,
+                              datatype=config.BIDS.DATATYPE,
+                              suffix=config.BIDS.FUNC_SUFFIX,
+                              file_extension=config.BIDS.FUNC_FILE_EXTENSION,
+                              space=config.BIDS.SPACE)
+
+        mask_file = get_files(layout=layout,
+                              subject=subject,
+                              return_type=config.BIDS.RETURN_TYPE,
+                              task=config.BIDS.TASK,
+                              datatype=config.BIDS.DATATYPE,
+                              suffix=config.BIDS.MASK_SUFFIX,
+                              file_extension=config.BIDS.MASK_FILE_EXTENSION,
+                              space=config.BIDS.SPACE)
+
+        confound_file = get_files(layout=layout,
+                                  subject=subject,
+                                  return_type=config.BIDS.RETURN_TYPE,
+                                  task=config.BIDS.TASK,
+                                  datatype=config.BIDS.DATATYPE,
+                                  suffix=config.BIDS.CONFOUNDS_SUFFIX,
+                                  file_extension=config.BIDS.CONFOUNDS_FILE_EXTENSION)
+
+        functional_image = load_fimg(func_file=func_file,
+                                     drop_tr_count=config.PARCELLATION.TR_DROP)
+
+        confounds = extract_confound_vars(confound_file,
+                                          confounds=config.PARCELLATION.CONFOUNDS,
+                                          drop_tr_count=config.PARCELLATION.TR_DROP)
+
+        parcelled_ts = get_time_series(masker=masker,
+                                       confounds=confounds,
+                                       func_img=functional_image)
+        logger.debug(f'Extracted time series of shape: {parcelled_ts.shape}')
+
+        time_series.append(parcelled_ts)
+        labels_list.append(masker.labels_)
+
+    logger.info(f'Extracted time series for {len(time_series)} subjects')
+    logger.info(f'Atlas ROIs: {masker.labels_}')
+
+    return time_series, labels_list
 
 
-print(func_file, mask_file, confound_file)
+def main():
+    cfg = combine_config()
 
-# Load func image
-func_img = nimg.load_img(func_file)
+    age_groups = [
+        cfg.BIDS.ADULTS_BIDS_ROOT,
+        cfg.BIDS.TEENAGERS_BIDS_ROOT,
+        cfg.BIDS.CHILDREN_BIDS_ROOT
+    ]
 
-# Remove the first 4 TRs
-func_img = func_img.slicer[:, :, :, params['tr_drop']:]
+    for age_group in age_groups:
+        layout = get_layout(bids_root=age_group,
+                            validate=cfg.BIDS.VALIDATE)
 
-# Use the above function to pull out a confound matrix
-confounds = extract_confounds(confound_file,
-                              params['confounds'])
-# Drop the first 4 rows of the confounds matrix
-confounds = confounds[params['tr_drop']:, :]
+        masker = define_masker(labels_img=cfg.PARCELLATION.ATLAS_FILE,
+                               standardize=cfg.PARCELLATION.STANDARDIZE,
+                               memory=cfg.PARCELLATION.MEMORY,
+                               detrend=cfg.PARCELLATION.DETREND,
+                               high_pass=cfg.PARCELLATION.HIGH_PASS,
+                               low_pass=cfg.PARCELLATION.LOW_PASS,
+                               t_r=cfg.PARCELLATION.TR)
+
+        time_series, labels_list = extract_time_series(layout=layout,
+                                                       masker=masker,
+                                                       config=cfg)
+        save_parcellation_results(time_series=time_series,
+                                  labels_list=labels_list,
+                                  out_folder=cfg.PARCELLATION.RESULTS_OUT_FOLDER,
+                                  file_name=cfg.PARCELLATION.RESULTS_FILE_NAME,
+                                  age_group=os.path.basename(age_group))
 
 
-# Apply cleaning, parcellation and extraction to functional data
-cleaned_and_averaged_time_series = masker.fit_transform(func_img, confounds)
-print(cleaned_and_averaged_time_series.shape)
-
-print(type(cleaned_and_averaged_time_series))
+if __name__ == '__main__':
+    main()
