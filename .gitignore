@@ -4,6 +4,7 @@ __pycache__/
 *$py.class
 *.pklz
 *.m
+.DS_Store
 
 # Jupyter Notebook
 .ipynb_checkpoints
@@ -17,7 +18,9 @@ ENV/
 env.bak/
 venv.bak/
 
-notebooks/nilearn_cache
+# Derivatives
+*/nilearn_cache/
 docker_build.txt
 data/ds000030
 .idea/
+results/
