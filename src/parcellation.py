@@ -256,7 +256,8 @@ def main():
                                detrend=cfg.PARCELLATION.DETREND,
                                high_pass=cfg.PARCELLATION.HIGH_PASS,
                                low_pass=cfg.PARCELLATION.LOW_PASS,
-                               t_r=cfg.PARCELLATION.TR)
+                               t_r=cfg.PARCELLATION.TR,
+                               verbose=5)
 
         time_series, labels_list = extract_time_series(layout=layout,
                                                        masker=masker,
