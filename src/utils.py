@@ -2,7 +2,7 @@ from comet_ml import Experiment
 from nilearn import image as nimg
 
 from tqdm import tqdm
-from typing import Tuple
+from typing import Tuple, List
 
 import h5py
 import numpy as np
@@ -233,3 +233,16 @@ def read_h5_parcellation(parcel_file: str) -> Tuple[np.ndarray, np.ndarray]:
         loaded_labels_list = f['labels_list'][:]
 
     return loaded_time_series, loaded_labels_list
+
+
+def parcellation2list(time_series: np.ndarray) -> List[np.ndarray]:
+    """
+    Convert time series to list of time series for each subject
+
+    Args:
+        time_series: time series for all subjects
+
+    Returns:
+        time_series_list: list of time series for each subject
+    """
+    return [time_series[i, :, :] for i in range(time_series.shape[0])]
