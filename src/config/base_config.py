@@ -28,14 +28,14 @@ _C.BIDS.CONFOUNDS_FILE_EXTENSION = '.tsv'
 
 
 _C.PARCELLATION = CN()
-_C.PARCELLATION.ATLAS_FILE = 'resources/rois/aal/aal_SPM12/aal/atlas/AAL.nii'  # Join with _C.PATH.ROOT
+_C.PARCELLATION.ATLAS_FILE = 'resources/rois/schaefer_2018/schaefer_2018/Schaefer2018_100Parcels_7Networks_order_FSLMNI152_1mm.nii.gz'  # Join with _C.PATH.ROOT
 _C.PARCELLATION.CONFOUNDS = ['trans_x', 'trans_y', 'trans_z',
                              'rot_x', 'rot_y', 'rot_z',
                               'white_matter', 'csf', 'global_signal']
 _C.PARCELLATION.HIGH_PASS = 0.009
 _C.PARCELLATION.LOW_PASS = 0.08
 _C.PARCELLATION.DETREND = True
-_C.PARCELLATION.STANDARDIZE = True
+_C.PARCELLATION.STANDARDIZE = 'zscore_sample'
 _C.PARCELLATION.TR_DROP = 1
 _C.PARCELLATION.TR = 2
 _C.PARCELLATION.MEMORY = 'nilearn_cache'
