@@ -108,3 +108,35 @@ class CrossCorrelationNumpy(ConnectivityMeasure):
             np.fill_diagonal(M[k], 1)
 
         return M
+
+
+class MutualInformation(ConnectivityMeasure):
+    """Mutual information"""
+    def calc_mutual_info(x, y, bins=10):
+        from sklearn.metrics import mutual_info_score
+
+        c_xy = np.histogram2d(x, y, bins)[0]
+        mi = mutual_info_score(None, None, contingency=c_xy)
+        return mi
+
+    def bound(x):
+        return np.sqrt(1 - np.exp(-2 * x))
+
+    def calculate(self, time_series: List[np.ndarray]) -> np.ndarray:
+        import numpy as np
+
+        n_subjects = len(time_series)
+        n_regions = time_series[0].shape[1]
+        M = np.zeros((n_subjects, n_regions, n_regions))
+
+        for k in range(n_subjects):
+            for i in range(n_regions):
+                for j in range(i, n_regions):
+                    mi = self.calc_mutual_info(time_series[k][:, i], time_series[k][:, j])
+                    M[k, i, j] = self.bound(mi)
+
+            M[k] = M[k] + M[k].T
+            np.fill_diagonal(M[k], 1)
+
+        return M
+
