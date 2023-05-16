@@ -177,7 +177,7 @@ class GraphMetrics:
         n_patients = len(connectivity_matrices)
         n_regions = len(atlas_labels)
 
-        n_metrics = 8
+        n_metrics = 9
         metric_names = np.array(['assortativity',
                                  'avg_clustering_coefficient',
                                  'avg_shortest_path_length',
@@ -185,11 +185,12 @@ class GraphMetrics:
                                  'density',
                                  'radius',
                                  'diameter',
+                                 'transitivity',
                                  'small_worldness'])
 
         assert n_metrics == len(metric_names)
 
-        X_graph = np.zeros((n_patients, n_regions * n_metrics))
+        X_graph = np.zeros((n_patients, n_metrics))
         X_names = np.empty((n_patients, n_metrics), dtype='U50')
 
         for i, matr in enumerate(connectivity_matrices):
@@ -233,7 +234,15 @@ class GraphMetrics:
         """
         with h5py.File(path, 'w') as hf:
             hf.create_dataset('X', data=X)
-            hf.create_dataset('X_names', data=X_names)
+            hf.create_dataset('X_names', data=np.array(X_names, dtype='S'))
+
+    @staticmethod
+    def load_from_h5(path: str):
+        """Load metrics from h5 file"""
+        with h5py.File(path, 'r') as hf:
+            X = hf['X'][:]
+            X_names = hf['X_names'][:]
+        return X, X_names
 
 
 
