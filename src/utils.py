@@ -2,7 +2,7 @@ from comet_ml import Experiment
 from nilearn import image as nimg
 
 from tqdm import tqdm
-from typing import Tuple, List
+from typing import Tuple, List, Optional
 
 import h5py
 import numpy as np
@@ -248,18 +248,22 @@ def parcellation2list(time_series: np.ndarray) -> List[np.ndarray]:
     return [time_series[i, :, :] for i in range(time_series.shape[0])]
 
 
-def matrix_thresholding(matrices: np.ndarray, threshold: float) -> np.ndarray:
+def matrix_thresholding(matrices: np.ndarray,
+                        threshold: Optional[float] = None) -> np.ndarray:
     """
     Threshold matrix
 
     Args:
-        matrces: connectivity matrices (n_sub, n_regions, n_regions)
-        threshold: threshold value
+        matrices (np.ndarray): connectivity matrices (n_sub, n_regions, n_regions)
+        threshold (Optional[float]): threshold value or None. If none,
+                                     then threshold = one standard deviation above grand mean
 
     Returns:
         np.array: thresholded matrix
     """
     tresholded_matrices = matrices.copy()
+    if threshold is None:
+        threshold = np.mean(tresholded_matrices) + np.std(tresholded_matrices)
     for matrix in tresholded_matrices:
         np.fill_diagonal(matrix, 0)
         matrix[matrix < threshold] = 0.0
