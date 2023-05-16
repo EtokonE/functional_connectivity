@@ -1,8 +1,21 @@
 """Implement graph metrics calculation"""
+import os
 import h5py
-import networkx as nx
 import numpy as np
+import networkx as nx
+from tqdm import tqdm
 from typing import List, Tuple
+
+from src.logger import get_logger
+from src.parcellation import define_h5_path
+from src.config.base_config import combine_config
+from src.utils import read_h5_connectivity, get_atlas_labels
+
+import warnings
+warnings.filterwarnings('ignore')
+
+
+log = get_logger('Graph_analysis')
 
 
 class GraphMetrics:
@@ -245,10 +258,89 @@ class GraphMetrics:
         return X, X_names
 
 
+def calculate_graph_features(connectivity_matrices: np.ndarray,
+                             atlas_labels: List,
+                             path_local_features: str) -> Tuple[np.ndarray, np.ndarray]:
+
+    graph_features = GraphMetrics()
+    X_graph_global, X_names_global = graph_features.calculate_global_metrics(
+        connectivity_matrices=connectivity_matrices,
+        atlas_labels=atlas_labels
+    )
+
+    graph_features.save_metrics(X_graph_global, X_names_global, path)
 
 
+def main():
+    cfg = combine_config()
+
+    age_groups = [
+        cfg.BIDS.ADULTS_BIDS_ROOT,
+        cfg.BIDS.TEENAGERS_BIDS_ROOT,
+        cfg.BIDS.CHILDREN_BIDS_ROOT
+    ]
+
+    os.makedirs(cfg.GRAPH_FEATURES.RESULTS_OUT_FOLDER, exist_ok=True)
+
+    graph_features = GraphMetrics()
+
+    for age_group in tqdm(age_groups):
+        age_group_name = os.path.basename(age_group)
+        log.info(f'Calculating graph features for group: {age_group_name}...')
+
+        fc_measures_path = define_h5_path(
+            out_folder=cfg.CONNECTIVITY.RESULTS_OUT_FOLDER,
+            file_name=cfg.CONNECTIVITY.RESULTS_FILE_NAME,
+            age_group=age_group_name
+        )
+
+        atlas_labels = get_atlas_labels(cfg.PARCELLATION.ATLAS_LABELS_FILE)
+
+        for connectivity_measure in cfg.CONNECTIVITY.MEASURES:
+            log.info('-' * 50)
+            log.info(f'Calculating graph features for connectivity measure: {connectivity_measure}...')
+
+            # Load connectivity matrices
+            connectivity_matrices = read_h5_connectivity(
+                connectivity_file=fc_measures_path,
+                connectivity_measures=connectivity_measure
+            )
+            log.info(f'Loaded connectivity matrices from file: {fc_measures_path}, '
+                     f'for measure: {connectivity_measure}, '
+                     f'with shape: {connectivity_matrices.shape}')
+
+            # Calculate local graph features
+            graph_features_path_local = define_h5_path(
+                out_folder=cfg.GRAPH_FEATURES.RESULTS_OUT_FOLDER,
+                file_name=cfg.GRAPH_FEATURES.RESULTS_FILE_NAME,
+                age_group=age_group_name,
+                additional_info=connectivity_measure + '_local'
+            )
+
+            log.info(f'Calculating local graph features for connectivity measure: {connectivity_measure}...')
+            X_graph_local, X_names_local = graph_features.calculate_local_metrics(
+                connectivity_matrices=connectivity_matrices,
+                atlas_labels=list(atlas_labels)
+            )
+            log.info(f'Saving local graph features to file: {graph_features_path_local}')
+            graph_features.save_metrics(X_graph_local, X_names_local, graph_features_path_local)
+
+            # Calculate global graph features
+            graph_features_path_global = define_h5_path(
+                out_folder=cfg.GRAPH_FEATURES.RESULTS_OUT_FOLDER,
+                file_name=cfg.GRAPH_FEATURES.RESULTS_FILE_NAME,
+                age_group=age_group_name,
+                additional_info=connectivity_measure + '_global'
+            )
+
+            log.info(f'Calculating global graph features for connectivity measure: {connectivity_measure}...')
+            X_graph_global, X_names_global = graph_features.calculate_global_metrics(
+                connectivity_matrices=connectivity_matrices,
+                atlas_labels=list(atlas_labels)
+            )
+            log.info(f'Saving global graph features to file: {graph_features_path_global}')
+            graph_features.save_metrics(X_graph_global, X_names_global, graph_features_path_global)
 
 
-
-
-
+if __name__ == '__main__':
+    main()
