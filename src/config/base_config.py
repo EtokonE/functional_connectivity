@@ -29,6 +29,7 @@ _C.BIDS.CONFOUNDS_FILE_EXTENSION = '.tsv'
 
 _C.PARCELLATION = CN()
 _C.PARCELLATION.ATLAS_FILE = 'resources/rois/schaefer_2018/schaefer_2018/Schaefer2018_100Parcels_7Networks_order_FSLMNI152_1mm.nii.gz'  # Join with _C.PATH.ROOT
+_C.PARCELLATION.ATLAS_LABELS_FILE = 'resources/rois/schaefer_2018/schaefer_2018/Schaefer2018_100Parcels_7Networks_order.txt' # Join with _C.PATH.ROOT
 _C.PARCELLATION.CONFOUNDS = ['trans_x', 'trans_y', 'trans_z',
                              'rot_x', 'rot_y', 'rot_z',
                               'white_matter', 'csf', 'global_signal']
@@ -68,6 +69,11 @@ _C.CONNECTIVITY.MEASURES = [  # Should be in possible_measures
 ]
 _C.CONNECTIVITY.RESULTS_OUT_FOLDER = 'results/connectivity/Schaefer2018_100Parcels_7Networks'
 _C.CONNECTIVITY.RESULTS_FILE_NAME = 'connectivity.h5'
+
+
+_C.GRAPH_FEATURES = CN()
+_C.GRAPH_FEATURES.RESULTS_OUT_FOLDER = 'results/graph_features/Schaefer2018_100Parcels_7Networks'
+_C.GRAPH_FEATURES.RESULTS_FILE_NAME = 'graph_features.h5'
 
 
 def get_cfg_defaults():
@@ -112,6 +118,11 @@ def combine_config(cfg_path: Union[str, None] = None):
         base_config.PARCELLATION.ATLAS_FILE
     )
 
+    base_config.PARCELLATION.ATLAS_LABELS_FILE = osp.join(
+        base_config.PATH.ROOT,
+        base_config.PARCELLATION.ATLAS_LABELS_FILE
+    )
+
     base_config.PARCELLATION.RESULTS_OUT_FOLDER = osp.join(
         base_config.PATH.ROOT,
         base_config.PARCELLATION.RESULTS_OUT_FOLDER
@@ -120,6 +131,11 @@ def combine_config(cfg_path: Union[str, None] = None):
     base_config.CONNECTIVITY.RESULTS_OUT_FOLDER = osp.join(
         base_config.PATH.ROOT,
         base_config.CONNECTIVITY.RESULTS_OUT_FOLDER
+    )
+
+    base_config.GRAPH_FEATURES.RESULTS_OUT_FOLDER = osp.join(
+        base_config.PATH.ROOT,
+        base_config.GRAPH_FEATURES.RESULTS_OUT_FOLDER
     )
 
     return base_config
