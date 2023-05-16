@@ -248,18 +248,19 @@ def parcellation2list(time_series: np.ndarray) -> List[np.ndarray]:
     return [time_series[i, :, :] for i in range(time_series.shape[0])]
 
 
-def matrix_thresholding(matrix: np.ndarray, threshold: float) -> np.ndarray:
+def matrix_thresholding(matrices: np.ndarray, threshold: float) -> np.ndarray:
     """
     Threshold matrix
 
     Args:
-        matrix: apply threshold to this matrix
+        matrces: connectivity matrices (n_sub, n_regions, n_regions)
         threshold: threshold value
 
     Returns:
         np.array: thresholded matrix
     """
-    tresholded_matrix = matrix[0].copy()
-    np.fill_diagonal(tresholded_matrix, 0)
-    tresholded_matrix[tresholded_matrix < threshold] = 0.0
-    return tresholded_matrix
+    tresholded_matrices = matrices.copy()
+    for matrix in tresholded_matrices:
+        np.fill_diagonal(matrix, 0)
+        matrix[matrix < threshold] = 0.0
+    return tresholded_matrices
