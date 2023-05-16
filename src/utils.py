@@ -246,3 +246,20 @@ def parcellation2list(time_series: np.ndarray) -> List[np.ndarray]:
         time_series_list: list of time series for each subject
     """
     return [time_series[i, :, :] for i in range(time_series.shape[0])]
+
+
+def matrix_thresholding(matrix: np.ndarray, threshold: float) -> np.ndarray:
+    """
+    Threshold matrix
+
+    Args:
+        matrix: apply threshold to this matrix
+        threshold: threshold value
+
+    Returns:
+        np.array: thresholded matrix
+    """
+    tresholded_matrix = matrix[0].copy()
+    np.fill_diagonal(tresholded_matrix, 0)
+    tresholded_matrix[tresholded_matrix < threshold] = 0.0
+    return tresholded_matrix
