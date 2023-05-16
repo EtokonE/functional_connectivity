@@ -2,6 +2,7 @@
 This script is used to extract the time series from the preprocessed functional data
 using the parcellation atlas. The atlas was chosen from:
 - https://github.com/nilearn/nilearn/blob/main/nilearn/datasets/atlas.py
+atlas.fetch_atlas_schaefer_2018(n_rois=100, data_dir='../resources/rois/schaefer_2018/')
 """
 import os
 import bids
@@ -142,8 +143,12 @@ def extract_confounds(confound_tsv: str, confounds: list, dt: bool = True) -> np
     return confound_mat
 
 
-def define_h5_path(out_folder: str, file_name: str, age_group: str):
+def define_h5_path(out_folder: str, file_name: str, age_group: str, additional_info: str = None) -> str:
     """Define the full path for the results file"""
+    if additional_info:
+        full_path = os.path.join(out_folder, f'{age_group}_{additional_info}_{file_name}')
+        return full_path
+
     full_path = os.path.join(out_folder, f'{age_group}_{file_name}')
     return full_path
 
