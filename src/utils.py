@@ -2,7 +2,8 @@ from comet_ml import Experiment
 from nilearn import image as nimg
 
 from tqdm import tqdm
-from typing import Tuple, List, Optional
+from collections.abc import Iterable
+from typing import Tuple, List, Optional, Union, Dict
 
 import h5py
 import numpy as np
@@ -235,6 +236,32 @@ def read_h5_parcellation(parcel_file: str) -> Tuple[np.ndarray, np.ndarray]:
     return loaded_time_series, loaded_labels_list
 
 
+def read_h5_connectivity(connectivity_file: str, connectivity_measures: Union[List, str]) -> Union[Dict, np.ndarray]:
+    """
+    Load connectivity matrices from .h5 file
+
+    Args:
+        connectivity_file (str): path to .h5 file with connectivity matrices
+        connectivity_measures (Union[List, str]): list of connectivity measures to load or one connectivity measure
+
+    Returns:
+        connectivity_matrices (Union[Dict, np.ndarray]): connectivity matrices for all subjects
+                        If given list of measures, returns dict with connectivity matrices for each measure
+                        in format {measure: connectivity_matrices}
+    """
+    with h5py.File(connectivity_file, 'r') as f:
+        # If we want to load only one connectivity measure
+        if isinstance(connectivity_measures, str):
+            return f[connectivity_measures][:]
+
+        # If we want to load few connectivity measures
+        if isinstance(connectivity_measures, Iterable):
+            connectivity_matrices = {}
+            for measure in connectivity_measures:
+                connectivity_matrices[measure] = f[measure][:]
+    return connectivity_matrices
+
+
 def parcellation2list(time_series: np.ndarray) -> List[np.ndarray]:
     """
     Convert time series to list of time series for each subject
@@ -268,3 +295,7 @@ def matrix_thresholding(matrices: np.ndarray,
         np.fill_diagonal(matrix, 0)
         matrix[matrix < threshold] = 0.0
     return tresholded_matrices
+
+
+def get_atlas_labels(file: str) -> np.ndarray:
+    return np.genfromtxt(file, usecols=1, dtype="S", delimiter="\t", encoding=None)
