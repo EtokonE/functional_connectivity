@@ -2,6 +2,7 @@
 This script is used to extract the time series from the preprocessed functional data
 using the parcellation atlas. The atlas was chosen from:
 - https://github.com/nilearn/nilearn/blob/main/nilearn/datasets/atlas.py
+atlas.fetch_atlas_schaefer_2018(n_rois=100, data_dir='../resources/rois/schaefer_2018/')
 """
 import os
 import bids
