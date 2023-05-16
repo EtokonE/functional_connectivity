@@ -142,6 +142,12 @@ def extract_confounds(confound_tsv: str, confounds: list, dt: bool = True) -> np
     return confound_mat
 
 
+def define_h5_path(out_folder: str, file_name: str, age_group: str):
+    """Define the full path for the results file"""
+    full_path = os.path.join(out_folder, f'{age_group}_{file_name}')
+    return full_path
+
+
 def save_parcellation_results(time_series: List[np.ndarray],
                               labels_list: List[np.ndarray],
                               out_folder: str = 'results',
@@ -157,7 +163,7 @@ def save_parcellation_results(time_series: List[np.ndarray],
         file_name (str): name of the results file
         age_group (str): age group (adults/children...) to add to the file name
     """
-    full_path = os.path.join(out_folder, f'{age_group}_{file_name}')
+    full_path = define_h5_path(out_folder, file_name, age_group)
     os.makedirs(out_folder, exist_ok=True)
 
     with h5py.File(full_path, 'w') as f:

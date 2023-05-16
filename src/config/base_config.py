@@ -39,8 +39,35 @@ _C.PARCELLATION.STANDARDIZE = 'zscore_sample'
 _C.PARCELLATION.TR_DROP = 1
 _C.PARCELLATION.TR = 2
 _C.PARCELLATION.MEMORY = 'nilearn_cache'
-_C.PARCELLATION.RESULTS_OUT_FOLDER = 'results'  # Join with _C.PATH.ROOT
+_C.PARCELLATION.RESULTS_OUT_FOLDER = 'results/parcellation/Schaefer2018_100Parcels_7Networks'  # Join with _C.PATH.ROOT
 _C.PARCELLATION.RESULTS_FILE_NAME = 'parcellation.h5'
+
+possible_measures = [
+    'pearson',
+    'cross_correlation_statmodels',
+    'cross_correlation_numpy',
+    'coherence',
+    'wavelet_coherence',
+    'mutual_information',
+    'euclidean_distance',
+    'cityblock_distance',
+    'dynamic_time_warping',
+    'earth_movers_distance']
+
+
+_C.CONNECTIVITY = CN()
+_C.CONNECTIVITY.MEASURES = [  # Should be in possible_measures
+    'pearson',
+    'cross_correlation_statmodels',
+    'cross_correlation_numpy',
+    'coherence',
+    'mutual_information',
+    'euclidean_distance',
+    'cityblock_distance',
+    'earth_movers_distance'
+]
+_C.CONNECTIVITY.RESULTS_OUT_FOLDER = 'results/connectivity/Schaefer2018_100Parcels_7Networks'
+_C.CONNECTIVITY.RESULTS_FILE_NAME = 'connectivity.h5'
 
 
 def get_cfg_defaults():
@@ -88,6 +115,11 @@ def combine_config(cfg_path: Union[str, None] = None):
     base_config.PARCELLATION.RESULTS_OUT_FOLDER = osp.join(
         base_config.PATH.ROOT,
         base_config.PARCELLATION.RESULTS_OUT_FOLDER
+    )
+
+    base_config.CONNECTIVITY.RESULTS_OUT_FOLDER = osp.join(
+        base_config.PATH.ROOT,
+        base_config.CONNECTIVITY.RESULTS_OUT_FOLDER
     )
 
     return base_config
