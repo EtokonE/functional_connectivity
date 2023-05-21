@@ -9,7 +9,7 @@ from typing import List, Tuple
 from src.logger import get_logger
 from src.parcellation import define_h5_path
 from src.config.base_config import combine_config
-from src.utils import read_h5_connectivity, get_atlas_labels
+from src.utils import read_h5_connectivity, get_atlas_labels, matrix_thresholding
 
 import warnings
 warnings.filterwarnings('ignore')
@@ -21,7 +21,8 @@ log = get_logger('Graph_analysis')
 class GraphMetrics:
     def calculate_local_metrics(self,
                                 connectivity_matrices: np.ndarray,
-                                atlas_labels: List) -> Tuple[np.ndarray, np.ndarray]:
+                                atlas_labels: List,
+                                measure_name: str) -> Tuple[np.ndarray, np.ndarray]:
         """
         Calculate local graph metrics for each subject
         Local Graph metrics included:
@@ -45,7 +46,7 @@ class GraphMetrics:
         n_metrics = 5
 
         X_graph = np.zeros((n_patients, n_regions * n_metrics))
-        X_names = np.empty((n_patients, n_regions * n_metrics), dtype='U50')
+        X_names = np.empty((n_patients, n_regions * n_metrics), dtype='U150')
 
         for i, matr in enumerate(connectivity_matrices):
             # Build graph
@@ -53,23 +54,23 @@ class GraphMetrics:
 
             degree = np.array([degree[1] for degree in nx.degree(G)])
             degree_names = [(atlas_labels[i].decode('utf-8')
-                             + '_degree') for i in range(len(degree))]
+                             + '_degree_' + measure_name) for i in range(len(degree))]
 
             neighbor_degree_avg = np.array(list(nx.average_neighbor_degree(G).values()))
             neighbor_degree_avg_names = [(atlas_labels[i].decode('utf-8')
-                                          + '_neighbor_degree_avg') for i in range(len(degree))]
+                                          + '_neighbor_degree_avg_' + measure_name) for i in range(len(degree))]
 
             centrality_betweenness = np.array(list(nx.betweenness_centrality(G).values()))
             centrality_betweenness_names = [(atlas_labels[i].decode('utf-8')
-                                             + '_centrality_betweenness') for i in range(len(degree))]
+                                             + '_centrality_betweenness_' + measure_name) for i in range(len(degree))]
 
             centrality_closeness = np.array(list(nx.closeness_centrality(G).values()))
             centrality_closeness_names = [(atlas_labels[i].decode('utf-8')
-                                           + '_centrality_closeness') for i in range(len(degree))]
+                                           + '_centrality_closeness_' + measure_name) for i in range(len(degree))]
 
             clustering_coefficient = np.array(list(nx.clustering(G).values()))
             clustering_coefficient_names = [(atlas_labels[i].decode('utf-8')
-                                             + '_clustering_coefficient') for i in range(len(degree))]
+                                             + '_clustering_coefficient_'+ measure_name) for i in range(len(degree))]
 
             feature_i = np.concatenate((degree,
                                         neighbor_degree_avg,
@@ -165,7 +166,8 @@ class GraphMetrics:
 
     def calculate_global_metrics(self,
                                  connectivity_matrices: np.ndarray,
-                                 atlas_labels: List) -> Tuple[np.ndarray, np.ndarray]:
+                                 atlas_labels: List,
+                                 measure_name: str) -> Tuple[np.ndarray, np.ndarray]:
         """
         Calculate global metrics for each connectivity matrix in the dataset.
 
@@ -177,6 +179,7 @@ class GraphMetrics:
             - density
             - radius
             - diameter
+            - transitivity
             - small worldness
 
         Args:
@@ -191,15 +194,15 @@ class GraphMetrics:
         n_regions = len(atlas_labels)
 
         n_metrics = 9
-        metric_names = np.array(['assortativity',
-                                 'avg_clustering_coefficient',
-                                 'avg_shortest_path_length',
-                                 'cost_efficiency',
-                                 'density',
-                                 'radius',
-                                 'diameter',
-                                 'transitivity',
-                                 'small_worldness'])
+        metric_names = np.array(['assortativity_' + measure_name,
+                                 'avg_clustering_coefficient_' + measure_name,
+                                 'avg_shortest_path_length_' + measure_name,
+                                 'cost_efficiency_' + measure_name,
+                                 'density_' + measure_name,
+                                 'radius_' + measure_name,
+                                 'diameter_ ' + measure_name,
+                                 'transitivity_ ' + measure_name,
+                                 'small_worldness_ ' + measure_name])
 
         assert n_metrics == len(metric_names)
 
@@ -258,19 +261,6 @@ class GraphMetrics:
         return X, X_names
 
 
-def calculate_graph_features(connectivity_matrices: np.ndarray,
-                             atlas_labels: List,
-                             path_local_features: str) -> Tuple[np.ndarray, np.ndarray]:
-
-    graph_features = GraphMetrics()
-    X_graph_global, X_names_global = graph_features.calculate_global_metrics(
-        connectivity_matrices=connectivity_matrices,
-        atlas_labels=atlas_labels
-    )
-
-    graph_features.save_metrics(X_graph_global, X_names_global, path)
-
-
 def main():
     cfg = combine_config()
 
@@ -309,6 +299,8 @@ def main():
                      f'for measure: {connectivity_measure}, '
                      f'with shape: {connectivity_matrices.shape}')
 
+            connectivity_matrices_thr = matrix_thresholding(connectivity_matrices)
+
             # Calculate local graph features
             graph_features_path_local = define_h5_path(
                 out_folder=cfg.GRAPH_FEATURES.RESULTS_OUT_FOLDER,
@@ -319,8 +311,9 @@ def main():
 
             log.info(f'Calculating local graph features for connectivity measure: {connectivity_measure}...')
             X_graph_local, X_names_local = graph_features.calculate_local_metrics(
-                connectivity_matrices=connectivity_matrices,
-                atlas_labels=list(atlas_labels)
+                connectivity_matrices=connectivity_matrices_thr,
+                atlas_labels=list(atlas_labels),
+                measure_name=connectivity_measure
             )
             log.info(f'Saving local graph features to file: {graph_features_path_local}')
             graph_features.save_metrics(X_graph_local, X_names_local, graph_features_path_local)
@@ -335,8 +328,9 @@ def main():
 
             log.info(f'Calculating global graph features for connectivity measure: {connectivity_measure}...')
             X_graph_global, X_names_global = graph_features.calculate_global_metrics(
-                connectivity_matrices=connectivity_matrices,
-                atlas_labels=list(atlas_labels)
+                connectivity_matrices=connectivity_matrices_thr,
+                atlas_labels=list(atlas_labels),
+                measure_name=connectivity_measure
             )
             log.info(f'Saving global graph features to file: {graph_features_path_global}')
             graph_features.save_metrics(X_graph_global, X_names_global, graph_features_path_global)
