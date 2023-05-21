@@ -60,12 +60,14 @@ _C.CONNECTIVITY = CN()
 _C.CONNECTIVITY.MEASURES = [  # Should be in possible_measures
     'pearson',
     'cross_correlation_statmodels',
-    'cross_correlation_numpy',
+    #'cross_correlation_numpy',
     'coherence',
     'mutual_information',
     'euclidean_distance',
     'cityblock_distance',
-    'earth_movers_distance'
+    'earth_movers_distance',
+    'wavelet_coherence',
+    'dynamic_time_warping'
 ]
 _C.CONNECTIVITY.RESULTS_OUT_FOLDER = 'results/connectivity/Schaefer2018_100Parcels_7Networks'
 _C.CONNECTIVITY.RESULTS_FILE_NAME = 'connectivity.h5'
