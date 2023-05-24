@@ -53,7 +53,10 @@ possible_measures = [
     'euclidean_distance',
     'cityblock_distance',
     'dynamic_time_warping',
-    'earth_movers_distance']
+    'earth_movers_distance',
+    'percentage_bend_correlation',
+    'spearman_rank_correlation',
+    'partial_correlation']
 
 
 _C.CONNECTIVITY = CN()
@@ -67,7 +70,10 @@ _C.CONNECTIVITY.MEASURES = [  # Should be in possible_measures
     'cityblock_distance',
     'earth_movers_distance',
     'wavelet_coherence',
-    'dynamic_time_warping'
+    'dynamic_time_warping',
+    'percentage_bend_correlation',
+    'spearman_rank_correlation',
+    'partial_correlation'
 ]
 _C.CONNECTIVITY.RESULTS_OUT_FOLDER = 'results/connectivity/Schaefer2018_100Parcels_7Networks'
 _C.CONNECTIVITY.RESULTS_FILE_NAME = 'connectivity.h5'
@@ -77,6 +83,31 @@ _C.GRAPH_FEATURES = CN()
 _C.GRAPH_FEATURES.RESULTS_OUT_FOLDER = 'results/graph_features/Schaefer2018_100Parcels_7Networks'
 _C.GRAPH_FEATURES.RESULTS_FILE_NAME = 'graph_features.h5'
 
+
+_C.ML = CN()
+_C.ML.ROOT = 'results/ml'  # Join with _C.PATH.ROOT
+_C.ML.RAW_CONNECTIVITY_RESULTS_OUT_FOLDER = 'raw_connectivity'  # Join with _C.ML.ROOT
+_C.ML.GRAPH_CONNECTIVITY_RESULTS_OUT_FOLDER = 'graph_connectivity'  # Join with _C.ML.ROOT
+
+_C.RAW_CONNECTIVITY_SVC = CN()
+_C.RAW_CONNECTIVITY_SVC.KERNEL = 'linear'
+_C.RAW_CONNECTIVITY_SVC.C = 1.0
+_C.RAW_CONNECTIVITY_SVC.RANDOM_STATE = 42
+
+_C.RAW_CONNECTIVITY_FEATURE_EXTRACTOR = CN()
+_C.RAW_CONNECTIVITY_FEATURE_EXTRACTOR.K_FEATURES = 50
+_C.RAW_CONNECTIVITY_FEATURE_EXTRACTOR.CV_FOLDS = 5
+_C.RAW_CONNECTIVITY_FEATURE_EXTRACTOR.METRIC = 'accuracy'
+
+_C.GRAPH_CONNECTIVITY_SVC = CN()
+_C.GRAPH_CONNECTIVITY_SVC.KERNEL = 'linear'
+_C.GRAPH_CONNECTIVITY_SVC.C = 1.0
+_C.GRAPH_CONNECTIVITY_SVC.RANDOM_STATE = 42
+
+_C.GRAPH_CONNECTIVITY_FEATURE_EXTRACTOR = CN()
+_C.GRAPH_CONNECTIVITY_FEATURE_EXTRACTOR.K_FEATURES = 50
+_C.GRAPH_CONNECTIVITY_FEATURE_EXTRACTOR.CV_FOLDS = 5
+_C.GRAPH_CONNECTIVITY_FEATURE_EXTRACTOR.METRIC = 'accuracy'
 
 def get_cfg_defaults():
     """Returns yacs CfgNode object"""
@@ -138,6 +169,21 @@ def combine_config(cfg_path: Union[str, None] = None):
     base_config.GRAPH_FEATURES.RESULTS_OUT_FOLDER = osp.join(
         base_config.PATH.ROOT,
         base_config.GRAPH_FEATURES.RESULTS_OUT_FOLDER
+    )
+
+    base_config.ML.ROOT = osp.join(
+        base_config.PATH.ROOT,
+        base_config.ML.ROOT
+    )
+
+    base_config.ML.RAW_CONNECTIVITY_RESULTS_OUT_FOLDER = osp.join(
+        base_config.ML.ROOT,
+        base_config.ML.RAW_CONNECTIVITY_RESULTS_OUT_FOLDER
+    )
+
+    base_config.ML.GRAPH_CONNECTIVITY_RESULTS_OUT_FOLDER = osp.join(
+        base_config.ML.ROOT,
+        base_config.ML.GRAPH_CONNECTIVITY_RESULTS_OUT_FOLDER
     )
 
     return base_config
