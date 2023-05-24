@@ -350,6 +350,102 @@ class DynamicTimeWarping(ConnectivityMeasure):
             np.fill_diagonal(M[k], 0)
 
         return M
+    
+
+class PercentageBendCorrelation(ConnectivityMeasure):
+    """Percentage-bend correlation"""
+    def calculate(self, time_series: List[np.ndarray]) -> np.ndarray:
+
+        def percbend(x, y, beta=.2):
+            """Percentage bend correlation"""
+            import numpy as np
+            from scipy.stats import t
+            
+            X = np.column_stack((x, y))
+            nx = X.shape[0]
+            M = np.tile(np.median(X, axis=0), nx).reshape(X.shape)
+            W = np.sort(np.abs(X - M), axis=0)
+            m = int((1 - beta) * nx)
+            omega = W[m - 1, :]
+            P = (X - M) / omega
+            P[np.isinf(P)] = 0
+            P[np.isnan(P)] = 0
+
+            # Loop over columns
+            a = np.zeros((2, nx))
+            for c in [0, 1]:
+                psi = P[:, c]
+                i1 = np.where(psi < -1)[0].size
+                i2 = np.where(psi > 1)[0].size
+                s = X[:, c].copy()
+                s[np.where(psi < -1)[0]] = 0
+                s[np.where(psi > 1)[0]] = 0
+                pbos = (np.sum(s) + omega[c] * (i2 - i1)) / (s.size - i1 - i2)
+                a[c] = (X[:, c] - pbos) / omega[c]
+
+            # Bend
+            a[a <= -1] = -1
+            a[a >= 1] = 1
+
+            # Get r, tval and pval
+            a, b = a
+            r = (a * b).sum() / np.sqrt((a ** 2).sum() * (b ** 2).sum())
+            tval = r * np.sqrt((nx - 2) / (1 - r ** 2))
+            pval = 2 * t.sf(abs(tval), nx - 2)
+            return r
+
+        n_subjects = len(time_series)
+        n_regions = time_series[0].shape[1]
+        M = np.zeros((n_subjects, n_regions, n_regions))
+
+        log.info('Calculating percentage-bend correlation')
+        for k in tqdm(range(n_subjects)):
+            for i in range(n_regions):
+                for j in range(i, n_regions):
+                    corr = percbend(time_series[k][:, i], time_series[k][:, j])
+                    M[k, i, j] = corr
+
+            M[k] = M[k] + M[k].T
+            np.fill_diagonal(M[k], 1)
+        return M
+    
+
+class SpearmanRankCorrelation(ConnectivityMeasure):
+    """Spearman’s rank correlation coefficient"""
+    def calculate(self, time_series: List[np.ndarray]) -> np.ndarray:
+        from scipy import stats
+
+        n_subjects = len(time_series)
+        n_regions = time_series[0].shape[1]
+        M = np.zeros((n_subjects, n_regions, n_regions))
+
+        log.info('Calculating Spearman’s rank correlation')
+        for k in tqdm(range(n_subjects)):
+            for i in range(n_regions):
+                for j in range(i, n_regions):
+                    rho, _ = stats.spearmanr(time_series[k][:, i], time_series[k][:, j])
+                    M[k, i, j] = rho
+
+            M[k] = M[k] + M[k].T
+            np.fill_diagonal(M[k], 1)
+        return M
+    
+
+class PartialCorrelation(ConnectivityMeasure):
+    """Partial correlation"""
+    def calculate(self, time_series: List[np.ndarray]) -> np.ndarray:
+        from nilearn.connectome import ConnectivityMeasure
+        from sklearn.covariance import EmpiricalCovariance
+        from sklearn.covariance import LedoitWolf
+
+        covariance_estimator = LedoitWolf()
+        #covariance_estimator = EmpiricalCovariance()
+
+        log.info('Calculating Partial correlation')
+        connectivity_correlation = ConnectivityMeasure(kind="partial correlation", cov_estimator=covariance_estimator)
+        
+        correlation_matrices = connectivity_correlation.fit_transform(time_series)
+        return correlation_matrices
 
 
 connectiviry_measures = {
@@ -362,7 +458,10 @@ connectiviry_measures = {
     'euclidean_distance': EuclideanDistance,
     'cityblock_distance': CityblockDistance,
     'dynamic_time_warping': DynamicTimeWarping,
-    'earth_movers_distance': EarthMoversDistance
+    'earth_movers_distance': EarthMoversDistance,
+    'percentage_bend_correlation': PercentageBendCorrelation,
+    'spearman_rank_correlation': SpearmanRankCorrelation,
+    'partial_correlation': PartialCorrelation
 }
 
 
