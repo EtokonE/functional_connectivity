@@ -28,7 +28,7 @@ def plot_ts(time_series, title="Single voxel time series"):
     plt.figure(figsize=(16.5,5))
     plt.title(title)
     x_axis = np.arange(0, time_series.shape[0])
-    plt.plot( x_axis, time_series)
+    plt.plot(x_axis, time_series)
     plt.xlabel('Timepoint')
     plt.ylabel('Signal Value')
     

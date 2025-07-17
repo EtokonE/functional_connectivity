@@ -7,7 +7,6 @@ sys.path.append(os.path.join(os.path.dirname(os.getcwd()), '../../'))
 import warnings
 warnings.filterwarnings('ignore')
 
-
 import h5py
 import json
 import numpy as np
@@ -70,7 +69,7 @@ def extract_unique_pairwise(connectivity_matrix: np.ndarray) -> np.ndarray:
     Returns:
         np.ndarray: unique pairwise connectivity values from connectivity matrix (n*(n-1)/2)
     """
-    tril_indices = np.tril_indices(connectivity_matrix.shape[1], k = -1)
+    tril_indices = np.tril_indices(connectivity_matrix.shape[1], k=-1)
     unique_pairwise = connectivity_matrix[:, tril_indices[0], tril_indices[1]]
     return unique_pairwise
 
@@ -150,7 +149,6 @@ class SFSFeatureExtractor:
         sfs = sfs.fit(self.X, self.y)
         return sfs
 
-
     def get_best_features(self, sfs_metric_dict) -> List[str]:
         sorted_d = dict(sorted(sfs_metric_dict.items(), key=lambda item: item[1]['avg_score'], reverse=True))
         first_key = next(iter(sorted_d))
@@ -166,7 +164,6 @@ class SFSFeatureExtractor:
         plt.title('Sequential Forward Selection (w. StdDev)')
         plt.grid()
         plt.show()
-        
 
     def save_sfs_graph(self, sfs_metric_dict, filename: str):
         from mlxtend.plotting import plot_sequential_feature_selection as plot_sfs
@@ -178,7 +175,6 @@ class SFSFeatureExtractor:
         plt.grid()
         plt.savefig(filename)
 
-    
     def get_metric_dict(self, sfs) -> dict:
         return sfs.get_metric_dict()
     
@@ -210,7 +206,6 @@ def main():
         Path(cfg.BIDS.CHILDREN_BIDS_ROOT).name, 
         full_matrix=False
         )
- 
 
     connectivity_measures = cfg.CONNECTIVITY.MEASURES
     for measure in connectivity_measures:
@@ -227,16 +222,13 @@ def main():
         assert teenagers is not None, logger.error(f'No {measure} for teenagers') 
         assert children is not None, logger.error(f'No {measure} for children')
 
-
         logger.info(f'Adults {measure} shape: {adults.shape}')
         logger.info(f'Teenagers {measure} shape: {teenagers.shape}')
         logger.info(f'Children {measure} shape: {children.shape}')
 
-
         X = np.concatenate((adults, teenagers, children), axis=0)
         y = np.concatenate((y_adults, y_teenagers, y_children), axis=0)
         assert X.shape[0] == y.shape[0], logger.error('X and y shapes are not equal')
-
 
         clf = SVC(
             kernel=cfg.RAW_CONNECTIVITY_SVC.KERNEL,
@@ -256,7 +248,6 @@ def main():
         metric_dict = feature_extractor.get_metric_dict(sfs)
         choosen_features = feature_extractor.get_best_features(metric_dict)
         #feature_extractor.plot_sfs(metric_dict)
-
 
         clf = SVC(
             kernel=cfg.RAW_CONNECTIVITY_SVC.KERNEL,
