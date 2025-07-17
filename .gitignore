@@ -24,3 +24,8 @@ docker_build.txt
 data/ds000030
 .idea/
 results/
+data
+notebooks
+resources/rois/aal
+resources/rois/yeo2011_2
+resources/rois/yeo_2011
