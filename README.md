@@ -1,4 +1,4 @@
-# Functional Connectivity — Reproducible rs‑fMRI Pipeline  
+# Functional Connectivity  
 Analysis of functionally integrated relationships between spatially separated
 brain regions
 ------------------------------------------------------------------------------
