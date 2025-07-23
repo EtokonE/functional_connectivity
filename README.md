@@ -306,7 +306,4 @@ cite**
 Unless stated otherwise in individual files, **MIT License** applies.
 See `LICENSE` for full text.
 
-```
-MIT © 2025 EtokonE & contributors
-```
 
