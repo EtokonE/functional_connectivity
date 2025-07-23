@@ -9,7 +9,7 @@ resting‑state networks using graph theory and machine learning”**
 It contains **all scripts, configuration files and Docker resources** needed to
 reproduce the results reported in the manuscript.
 
-> **TL;DR for reviewers**  
+> **TL;DR**  
 > 1. `git clone https://github.com/EtokonE/functional_connectivity.git`  
 > 2. Pull the ready‑made Docker image `etokone/functional_connectivity:latest`  
 > 3. Mount your BIDS‑formatted dataset and run the four pipeline stages  
