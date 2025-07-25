@@ -69,20 +69,6 @@ scripts can be called from notebooks or the command line.
 | **fMRIPrep outputs**        | Pre‑whitened & MNI‑152‑normalised BOLD images                                                           |
 | Optional                    | GPU is *not* required; everything runs on CPU                                                           |
 
-### rs‑fMRI preprocessing (fMRIPrep 22.0.2)
-
-| Step | Anatomical (T1w)                                                | Functional (BOLD)                                                                                |
-| ---- |-----------------------------------------------------------------|--------------------------------------------------------------------------------------------------|
-| 1    | N4 bias‑field correction                                        | Reference volume & skull‑strip                                                                   |
-| 2    | Skull‑strip (`antsBrainExtraction`)                             | Slice‑time correction (`3dTshift`)                                                               |
-| 3    | FAST tissue segmentation (CSF/WM/GM)                            | Head‑motion realignment (6 DoF)                                                                  |
-| 4    | Surface reconstruction (FreeSurfer 7.4)                         | Susceptibility‑distortion correction (field‑map based)                                           |
-| 5    | Spatial normalisation → **MNI‑ICBM152 2009c** (non‑linear ANTs) | BBR T1w‑to‑BOLD co‑registration                                                                  |
-| 6    | —                                                               | Confound regression: 6 motion + derivatives, CSF/WM/Global, aCompCor‑5, *FD* & *DVARS* censoring |
-| 7    | —                                                               | Temporal filtering 0.01–0.1 Hz (after nuisance removal)                                          |
-| 8    | —                                                               | Output: pre‑whitened, MNI‑aligned 4 D NIfTI in `derivatives/fmriprep/sub-*/func/`                |
-
----
 
 ## Dataset layout
 
